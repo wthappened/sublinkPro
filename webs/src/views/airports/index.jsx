@@ -192,7 +192,8 @@ export default function AirportList() {
     ({ includePagination = false } = {}) => {
       const params = {};
 
-      if (includePagination) {
+      // -1 表示不分页，获取全部
+      if (includePagination && rowsPerPage !== -1) {
         params.page = page + 1;
         params.pageSize = rowsPerPage;
       }
@@ -965,7 +966,7 @@ export default function AirportList() {
           localStorage.setItem('airports_rowsPerPage', newValue);
           setPage(0);
         }}
-        pageSizeOptions={[10, 20, 50]}
+        pageSizeOptions={[10, 20, 50, 100, -1]}
       />
 
       {/* 添加/编辑对话框 */}

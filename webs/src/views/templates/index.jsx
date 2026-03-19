@@ -335,7 +335,8 @@ export default function TemplateList() {
   const fetchTemplates = async (currentPage, currentPageSize) => {
     setLoading(true);
     try {
-      const response = await getTemplates({ page: currentPage + 1, pageSize: currentPageSize });
+      const params = currentPageSize === -1 ? {} : { page: currentPage + 1, pageSize: currentPageSize };
+      const response = await getTemplates(params);
       // 处理分页响应
       if (response.data && response.data.items !== undefined) {
         setTemplates(response.data.items || []);
@@ -1415,7 +1416,7 @@ export default function TemplateList() {
           setPage(0);
           fetchTemplates(0, newValue);
         }}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[10, 20, 50, 100, -1]}
       />
 
       {/* 添加/编辑对话框 */}

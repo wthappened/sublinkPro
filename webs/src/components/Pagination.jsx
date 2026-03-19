@@ -32,7 +32,7 @@ export default function Pagination({
   totalItems = 0,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeOptions = [10, 20, 50, 100, -1],
   disabled = false,
   showPageInput = true,
   showFirstLast = true,
@@ -42,7 +42,8 @@ export default function Pagination({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const totalPages = pageSize > 0 ? Math.ceil(totalItems / pageSize) : 0;
+  const isAllMode = pageSize === -1;
+  const totalPages = isAllMode ? 1 : pageSize > 0 ? Math.ceil(totalItems / pageSize) : 0;
   const currentPage = page + 1; // 显示给用户的是1-indexed
 
   const handleFirstPage = () => {
@@ -94,8 +95,8 @@ export default function Pagination({
   };
 
   // 计算显示范围
-  const from = totalItems === 0 ? 0 : page * pageSize + 1;
-  const to = Math.min((page + 1) * pageSize, totalItems);
+  const from = totalItems === 0 ? 0 : isAllMode ? 1 : page * pageSize + 1;
+  const to = isAllMode ? totalItems : Math.min((page + 1) * pageSize, totalItems);
 
   return (
     <Box
@@ -126,17 +127,19 @@ export default function Pagination({
           value={pageSize}
           onChange={handlePageSizeSelect}
           disabled={disabled}
+          renderValue={(value) => (value === -1 ? '全部' : value)}
           sx={{ minWidth: 70, '& .MuiSelect-select': { py: 0.5 } }}
         >
           {pageSizeOptions.map((option) => (
             <MenuItem key={option} value={option}>
-              {option}
+              {option === -1 ? '全部' : option}
             </MenuItem>
           ))}
         </Select>
       </Box>
 
-      {/* 分页控制 */}
+      {/* 分页控制（全部模式下隐藏） */}
+      {!isAllMode && (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {showFirstLast && (
           <IconButton size="small" onClick={handleFirstPage} disabled={disabled || page === 0} title="首页">
@@ -198,6 +201,7 @@ export default function Pagination({
           </IconButton>
         )}
       </Box>
+      )}
     </Box>
   );
 }
@@ -208,7 +212,7 @@ Pagination.propTypes = {
   totalItems: PropTypes.number,
   onPageChange: PropTypes.func,
   onPageSizeChange: PropTypes.func,
-  pageSizeOptions: PropTypes.arrayOf(PropTypes.number),
+  pageSizeOptions: PropTypes.arrayOf(PropTypes.number), // -1 代表"全部"
   disabled: PropTypes.bool,
   showPageInput: PropTypes.bool,
   showFirstLast: PropTypes.bool,

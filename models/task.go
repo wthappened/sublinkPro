@@ -199,8 +199,11 @@ func ListTasks(filter TaskFilter, page, pageSize int) ([]Task, int64, error) {
 	}
 
 	// 分页查询，按创建时间倒序
-	offset := (page - 1) * pageSize
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&tasks).Error; err != nil {
+	if pageSize > 0 {
+		offset := (page - 1) * pageSize
+		query = query.Offset(offset).Limit(pageSize)
+	}
+	if err := query.Order("created_at DESC").Find(&tasks).Error; err != nil {
 		return nil, 0, err
 	}
 

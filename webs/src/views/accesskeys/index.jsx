@@ -97,7 +97,8 @@ export default function ApiKeyList() {
     if (!user?.userId) return;
     setLoading(true);
     try {
-      const response = await getAccessKeys(user.userId, { page: currentPage + 1, pageSize: currentPageSize });
+      const params = currentPageSize === -1 ? {} : { page: currentPage + 1, pageSize: currentPageSize };
+      const response = await getAccessKeys(user.userId, params);
       // 处理分页响应
       if (response.data && response.data.items !== undefined) {
         setAccessKeys(response.data.items || []);
@@ -303,7 +304,7 @@ export default function ApiKeyList() {
           setPage(0);
           fetchAccessKeys(0, newValue);
         }}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[10, 20, 50, 100, -1]}
       />
 
       {/* 创建对话框 */}

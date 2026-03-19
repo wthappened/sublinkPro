@@ -540,13 +540,17 @@ export default function TaskList() {
   const loadTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getTasks({
+      const params = {
         status: getStatusFilter(),
         type: typeFilter,
-        trigger: triggerFilter,
-        page: page + 1,
-        pageSize: rowsPerPage
-      });
+        trigger: triggerFilter
+      };
+      // -1 表示不分页，获取全部
+      if (rowsPerPage !== -1) {
+        params.page = page + 1;
+        params.pageSize = rowsPerPage;
+      }
+      const res = await getTasks(params);
       if (res.code === 200 || res.code === 0) {
         setTasks(res.data.items || []);
         setTotal(res.data.total || 0);
@@ -923,7 +927,7 @@ export default function TaskList() {
               setPage(0);
             }}
             labelRowsPerPage=""
-            rowsPerPageOptions={[10, 20, 50]}
+            rowsPerPageOptions={[10, 20, 50, 100, { value: -1, label: '全部' }]}
           />
         </Box>
       ) : (
@@ -1107,7 +1111,7 @@ export default function TaskList() {
               setPage(0);
             }}
             labelRowsPerPage="每页行数"
-            rowsPerPageOptions={[10, 20, 50]}
+            rowsPerPageOptions={[10, 20, 50, 100, { value: -1, label: '全部' }]}
           />
         </TableContainer>
       )}

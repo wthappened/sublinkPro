@@ -116,7 +116,8 @@ export default function ScriptList() {
   const fetchScripts = async (currentPage, currentPageSize) => {
     setLoading(true);
     try {
-      const response = await getScripts({ page: currentPage + 1, pageSize: currentPageSize });
+      const params = currentPageSize === -1 ? {} : { page: currentPage + 1, pageSize: currentPageSize };
+      const response = await getScripts(params);
       // 处理分页响应
       if (response.data && response.data.items !== undefined) {
         setScripts(response.data.items || []);
@@ -366,7 +367,7 @@ export default function ScriptList() {
           setPage(0);
           fetchScripts(0, newValue);
         }}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[10, 20, 50, 100, -1]}
       />
 
       {/* 添加/编辑对话框 */}
