@@ -8,11 +8,9 @@ import Box from '@mui/material/Box';
 import LogoSection from '../LogoSection';
 import ProfileSection from './ProfileSection';
 import NotificationSection from './NotificationSection';
-import DonationSection from './DonationSection';
 import ThemeModeSection from './ThemeModeSection';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
 import { getHeaderTriggerTokens } from './headerPopoverTokens';
-import { donationConfig } from 'config/donation';
 
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 
@@ -28,7 +26,7 @@ export default function Header() {
 
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
-  const sidebarAccent = theme.palette[donationConfig.headerIconColor].main;
+  const sidebarAccent = theme.palette.primary.main;
   const { triggerColor, triggerSurface, triggerBorder, activeSurface, activeBorder } = getHeaderTriggerTokens(
     theme,
     isDark,
@@ -73,9 +71,6 @@ export default function Header() {
 
       {/* spacer */}
       <Box sx={{ flexGrow: 1 }} />
-
-      {/* donation */}
-      <DonationSection />
 
       {/* notification */}
       <NotificationSection />
