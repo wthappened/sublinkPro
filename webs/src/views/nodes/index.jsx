@@ -300,9 +300,12 @@ export default function NodeList() {
       if (filterParams.sortBy) params.sortBy = filterParams.sortBy;
       if (filterParams.sortOrder) params.sortOrder = filterParams.sortOrder;
 
-      // 分页参数必须通过 filterParams 传递
-      params.page = (filterParams.page ?? 0) + 1; // 后端是1-indexed
-      params.pageSize = filterParams.pageSize ?? 20;
+      // 分页参数必须通过 filterParams 传递（-1 表示不分页，获取全部）
+      const currentPageSize = filterParams.pageSize ?? 20;
+      if (currentPageSize !== -1) {
+        params.page = (filterParams.page ?? 0) + 1; // 后端是1-indexed
+        params.pageSize = currentPageSize;
+      }
 
       const response = await getNodes(params);
       // 处理分页响应
@@ -1217,7 +1220,7 @@ export default function NodeList() {
           // 触发数据重新加载
           fetchNodes({ ...getCurrentFilters(), page: 0, pageSize: newValue });
         }}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[10, 20, 50, 100, -1]}
       />
 
       {/* 添加/编辑节点对话框 */}

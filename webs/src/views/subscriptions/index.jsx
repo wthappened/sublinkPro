@@ -199,7 +199,8 @@ export default function SubscriptionList() {
   const fetchSubscriptions = async (currentPage, currentPageSize) => {
     setLoading(true);
     try {
-      const response = await getSubscriptions({ page: currentPage + 1, pageSize: currentPageSize });
+      const params = currentPageSize === -1 ? {} : { page: currentPage + 1, pageSize: currentPageSize };
+      const response = await getSubscriptions(params);
       // 处理分页响应
       if (response.data && response.data.items !== undefined) {
         setSubscriptions(response.data.items || []);
@@ -986,7 +987,7 @@ export default function SubscriptionList() {
           setPage(0);
           fetchSubscriptions(0, newValue);
         }}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[10, 20, 50, 100, -1]}
       />
 
       {/* 添加/编辑对话框 */}
