@@ -33,7 +33,7 @@ export default function Pagination({
   totalItems = 0,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeOptions = [10, 20, 50, 100, -1],
   disabled = false,
   showPageInput = true,
   showFirstLast = true,
@@ -44,7 +44,8 @@ export default function Pagination({
   const { t } = useTranslation();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const totalPages = pageSize > 0 ? Math.ceil(totalItems / pageSize) : 0;
+  const isAllMode = pageSize === -1;
+  const totalPages = isAllMode ? 1 : pageSize > 0 ? Math.ceil(totalItems / pageSize) : 0;
   const currentPage = page + 1; // 显示给用户的是1-indexed
 
   const handleFirstPage = () => {
@@ -96,8 +97,8 @@ export default function Pagination({
   };
 
   // 计算显示范围
-  const from = totalItems === 0 ? 0 : page * pageSize + 1;
-  const to = Math.min((page + 1) * pageSize, totalItems);
+  const from = totalItems === 0 ? 0 : isAllMode ? 1 : page * pageSize + 1;
+  const to = isAllMode ? totalItems : Math.min((page + 1) * pageSize, totalItems);
 
   return (
     <Box
@@ -128,88 +129,91 @@ export default function Pagination({
           value={pageSize}
           onChange={handlePageSizeSelect}
           disabled={disabled}
+          renderValue={(value) => (value === -1 ? t('components.pagination.all', '全部') : value)}
           sx={{ minWidth: 70, '& .MuiSelect-select': { py: 0.5 } }}
         >
           {pageSizeOptions.map((option) => (
             <MenuItem key={option} value={option}>
-              {option}
+              {option === -1 ? t('components.pagination.all', '全部') : option}
             </MenuItem>
           ))}
         </Select>
       </Box>
 
-      {/* 分页控制 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        {showFirstLast && (
-          <IconButton size="small" onClick={handleFirstPage} disabled={disabled || page === 0} title={t('components.pagination.first')}>
-            <FirstPageIcon fontSize="small" />
+      {/* 分页控制（全部模式下隐藏） */}
+      {!isAllMode && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {showFirstLast && (
+            <IconButton size="small" onClick={handleFirstPage} disabled={disabled || page === 0} title={t('components.pagination.first')}>
+              <FirstPageIcon fontSize="small" />
+            </IconButton>
+          )}
+
+          <IconButton size="small" onClick={handlePrevPage} disabled={disabled || page === 0} title={t('components.pagination.previous')}>
+            <NavigateBeforeIcon fontSize="small" />
           </IconButton>
-        )}
 
-        <IconButton size="small" onClick={handlePrevPage} disabled={disabled || page === 0} title={t('components.pagination.previous')}>
-          <NavigateBeforeIcon fontSize="small" />
-        </IconButton>
-
-        {/* 页码输入 */}
-        {showPageInput && totalPages > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mx: 0.5 }}>
-            <TextField
-              size="small"
-              type="number"
-              defaultValue={currentPage}
-              key={currentPage}
-              onBlur={handlePageInputBlur}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handlePageInputChange(e);
-                  e.target.blur();
-                }
-              }}
-              disabled={disabled}
-              inputProps={{
-                min: 1,
-                max: totalPages,
-                style: { textAlign: 'center', width: '40px', padding: '4px 8px' }
-              }}
-              sx={{
-                width: '60px',
-                '& .MuiOutlinedInput-root': {
-                  '& input': {
-                    MozAppearance: 'textfield',
-                    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                      WebkitAppearance: 'none',
-                      margin: 0
+          {/* 页码输入 */}
+          {showPageInput && totalPages > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mx: 0.5 }}>
+              <TextField
+                size="small"
+                type="number"
+                defaultValue={currentPage}
+                key={currentPage}
+                onBlur={handlePageInputBlur}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePageInputChange(e);
+                    e.target.blur();
+                  }
+                }}
+                disabled={disabled}
+                inputProps={{
+                  min: 1,
+                  max: totalPages,
+                  style: { textAlign: 'center', width: '40px', padding: '4px 8px' }
+                }}
+                sx={{
+                  width: '60px',
+                  '& .MuiOutlinedInput-root': {
+                    '& input': {
+                      MozAppearance: 'textfield',
+                      '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                        WebkitAppearance: 'none',
+                        margin: 0
+                      }
                     }
                   }
-                }
-              }}
-            />
-            <Typography variant="body2" color="textSecondary">
-              / {totalPages}
-            </Typography>
-          </Box>
-        )}
+                }}
+              />
+              <Typography variant="body2" color="textSecondary">
+                / {totalPages}
+              </Typography>
+            </Box>
+          )}
 
-        <IconButton
-          size="small"
-          onClick={handleNextPage}
-          disabled={disabled || page >= totalPages - 1}
-          title={t('components.pagination.next')}
-        >
-          <NavigateNextIcon fontSize="small" />
-        </IconButton>
-
-        {showFirstLast && (
           <IconButton
             size="small"
-            onClick={handleLastPage}
+            onClick={handleNextPage}
             disabled={disabled || page >= totalPages - 1}
-            title={t('components.pagination.last')}
+            title={t('components.pagination.next')}
           >
-            <LastPageIcon fontSize="small" />
+            <NavigateNextIcon fontSize="small" />
           </IconButton>
-        )}
-      </Box>
+
+          {showFirstLast && (
+            <IconButton
+              size="small"
+              onClick={handleLastPage}
+              disabled={disabled || page >= totalPages - 1}
+              title={t('components.pagination.last')}
+            >
+              <LastPageIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }
@@ -220,7 +224,7 @@ Pagination.propTypes = {
   totalItems: PropTypes.number,
   onPageChange: PropTypes.func,
   onPageSizeChange: PropTypes.func,
-  pageSizeOptions: PropTypes.arrayOf(PropTypes.number),
+  pageSizeOptions: PropTypes.arrayOf(PropTypes.number), // -1 代表"全部"
   disabled: PropTypes.bool,
   showPageInput: PropTypes.bool,
   showFirstLast: PropTypes.bool,
