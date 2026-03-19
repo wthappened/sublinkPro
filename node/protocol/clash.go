@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -580,10 +581,16 @@ func DecodeClash(proxys []Proxy, yamlfile string, customGroups ...[]CustomProxyG
 
 	config["proxy-groups"] = proxyGroups
 
-	// 将修改后的内容写回文件
-	newData, err := yaml.Marshal(config)
+	// 将修改后的内容写回文件（使用 Encoder 控制缩进为 2 空格）
+	var buf bytes.Buffer
+	encoder := yaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+	err = encoder.Encode(config)
 	if err != nil {
 		utils.Error("error: %v", err)
 	}
-	return newData, nil
+	if err := encoder.Close(); err != nil {
+		utils.Error("error: %v", err)
+	}
+	return buf.Bytes(), nil
 }
