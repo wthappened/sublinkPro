@@ -23,13 +23,19 @@ func GetTasks(c *gin.Context) {
 	}
 
 	// 解析分页参数
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
+	pageSizeStr := c.Query("pageSize")
+	pageStr := c.Query("page")
+	page := 1
+	pageSize := 0 // 0 表示不分页
+	if pageStr != "" && pageSizeStr != "" {
+		page, _ = strconv.Atoi(pageStr)
+		pageSize, _ = strconv.Atoi(pageSizeStr)
+		if page < 1 {
+			page = 1
+		}
+		if pageSize < 1 || pageSize > 100 {
+			pageSize = 20
+		}
 	}
 
 	// 获取任务列表
