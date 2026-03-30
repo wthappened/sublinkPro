@@ -8,6 +8,26 @@ import (
 	"sublink/utils"
 )
 
+func init() {
+	base := newProtocolSpec("hysteria", []string{"hysteria://", "hy://"}, "Hysteria", "#f9a825", "H", HY{}, "Name", DecodeHYURL, EncodeHYURL, func(h HY) LinkIdentity {
+		return buildIdentity("hysteria", h.Name, h.Host, utils.GetPortString(h.Port))
+	},
+		FieldMeta{Name: "Name", Label: "节点名称", Type: "string", Group: "basic"},
+		FieldMeta{Name: "Host", Label: "服务器地址", Type: "string", Group: "basic"},
+		FieldMeta{Name: "Port", Label: "端口", Type: "int", Group: "basic"},
+		FieldMeta{Name: "Auth", Label: "认证", Type: "string", Group: "auth", Secret: true, Advanced: true},
+		FieldMeta{Name: "Protocol", Label: "协议", Type: "string", Group: "transport", Options: []string{"udp", "wechat-video", "faketcp"}},
+		FieldMeta{Name: "UpMbps", Label: "上行 Mbps", Type: "int", Group: "transport", Advanced: true},
+		FieldMeta{Name: "DownMbps", Label: "下行 Mbps", Type: "int", Group: "transport", Advanced: true},
+		FieldMeta{Name: "Peer", Label: "Peer", Type: "string", Group: "tls", Advanced: true},
+		FieldMeta{Name: "ALPN", Label: "ALPN", Type: "string", Group: "tls", Advanced: true, Multiline: true},
+		FieldMeta{Name: "Insecure", Label: "跳过证书校验", Type: "int", Group: "tls", Advanced: true, Options: []string{"0", "1"}},
+	)
+	MustRegisterProtocol(newProxyProtocolSpec(base, buildHYProxy, func(proxy Proxy) bool {
+		return proxyTypeMatches(proxy, "hysteria")
+	}, ConvertProxyToHy, EncodeHYURL))
+}
+
 type HY struct {
 	Host     string
 	Port     interface{}
@@ -21,23 +41,8 @@ type HY struct {
 	Name     string
 }
 
-// 开发者测试 CallHy 调用
-func CallHy() {
-	hy := HY{
-		Host:     "qq.com",
-		Port:     11926,
-		Protocol: "udp",
-		Insecure: 1,
-		Peer:     "youku.com",
-		Auth:     "",
-		UpMbps:   11,
-		DownMbps: 55,
-		// ALPN:     "h3",
-	}
-	fmt.Println(EncodeHYURL(hy))
-}
-
-// hy 编码
+// EncodeHYURL 将 Hysteria v1 结构编码为 hysteria:// 链接。
+// 导出时会省略空值和零值字段，并在名称缺失时回退为 host:port。
 func EncodeHYURL(hy HY) string {
 	// 如果没有设置 Name，则使用 Host:Port 作为 Fragment
 	if hy.Name == "" {
@@ -71,7 +76,7 @@ func EncodeHYURL(hy HY) string {
 	return u.String()
 }
 
-// hy 解码
+// DecodeHYURL 解析 hy:// 与 hysteria:// 两种别名链接，并在缺省端口时按当前约定回退到 443。
 func DecodeHYURL(s string) (HY, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -149,4 +154,18 @@ func ConvertProxyToHy(proxy Proxy) HY {
 	}
 
 	return hy
+}
+
+// buildHYProxy 将 Hysteria 链接转换为 Clash Proxy。
+// 当前实现固定按 UDP 节点导出，并将输出阶段的证书校验覆盖与原链接设置合并处理。
+func buildHYProxy(link Urls, config OutputConfig) (Proxy, error) {
+	hy, err := DecodeHYURL(link.Url)
+	if err != nil {
+		return Proxy{}, err
+	}
+	if hy.Name == "" {
+		hy.Name = fmt.Sprintf("%s:%s", hy.Host, utils.GetPortString(hy.Port))
+	}
+	skipCert := config.Cert || hy.Insecure == 1
+	return Proxy{Name: hy.Name, Type: "hysteria", Server: hy.Host, Port: FlexPort(utils.GetPortInt(hy.Port)), Auth_str: hy.Auth, Up: hy.UpMbps, Down: hy.DownMbps, Up_Speed: hy.UpMbps, Down_Speed: hy.DownMbps, Alpn: hy.ALPN, Peer: hy.Peer, Protocol: hy.Protocol, Udp: true, Skip_cert_verify: skipCert, Dialer_proxy: link.DialerProxyName}, nil
 }

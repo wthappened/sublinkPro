@@ -8,6 +8,31 @@ import (
 	"sublink/utils"
 )
 
+func init() {
+	base := newProtocolSpec("tuic", []string{"tuic://"}, "TUIC", "#0277bd", "T", Tuic{}, "Name", DecodeTuicURL, EncodeTuicURL, func(t Tuic) LinkIdentity {
+		return buildIdentity("tuic", t.Name, t.Host, utils.GetPortString(t.Port))
+	},
+		FieldMeta{Name: "Name", Label: "节点名称", Type: "string", Group: "basic"},
+		FieldMeta{Name: "Host", Label: "服务器地址", Type: "string", Group: "basic"},
+		FieldMeta{Name: "Port", Label: "端口", Type: "int", Group: "basic"},
+		FieldMeta{Name: "Uuid", Label: "UUID", Type: "string", Group: "auth", Secret: true, Advanced: true},
+		FieldMeta{Name: "Password", Label: "密码", Type: "string", Group: "auth", Secret: true, Advanced: true},
+		FieldMeta{Name: "Token", Label: "Token", Type: "string", Group: "auth", Secret: true, Advanced: true},
+		FieldMeta{Name: "Version", Label: "版本", Type: "int", Group: "transport", Options: []string{"4", "5"}},
+		FieldMeta{Name: "Congestion_control", Label: "拥塞控制", Type: "string", Group: "transport", Advanced: true},
+		FieldMeta{Name: "Udp_relay_mode", Label: "UDP Relay Mode", Type: "string", Group: "transport", Advanced: true},
+		FieldMeta{Name: "Disable_sni", Label: "禁用 SNI", Type: "int", Group: "tls", Advanced: true, Options: []string{"0", "1"}},
+		FieldMeta{Name: "Tls", Label: "启用 TLS", Type: "bool", Group: "tls"},
+		FieldMeta{Name: "Sni", Label: "SNI", Type: "string", Group: "tls", Advanced: true},
+		FieldMeta{Name: "Alpn", Label: "ALPN", Type: "string", Group: "tls", Advanced: true, Multiline: true},
+		FieldMeta{Name: "ClientFingerprint", Label: "指纹", Type: "string", Group: "tls", Advanced: true},
+		FieldMeta{Name: "Insecure", Label: "跳过证书校验", Type: "int", Group: "tls", Advanced: true, Options: []string{"0", "1"}},
+	)
+	MustRegisterProtocol(newProxySurgeProtocolSpec(base, buildTuicProxy, func(proxy Proxy) bool {
+		return proxyTypeMatches(proxy, "tuic")
+	}, ConvertProxyToTuic, EncodeTuicURL, buildTuicSurgeLine))
+}
+
 type Tuic struct {
 	Name               string
 	Password           string //v5
@@ -26,7 +51,7 @@ type Tuic struct {
 	Insecure           int    // 跳过证书验证，对应URI中的insecure参数
 }
 
-// Tuic 解码
+// DecodeTuicURL 解析当前实现支持的 TUIC 链接字段，并补齐默认端口与名称。
 func DecodeTuicURL(s string) (Tuic, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -111,7 +136,8 @@ func DecodeTuicURL(s string) (Tuic, error) {
 	}, nil
 }
 
-// EncodeTuicURL tuic 编码
+// EncodeTuicURL 将 TUIC 结构编码为 tuic:// 链接。
+// 编码时会根据版本与凭据形态选择输出 token 或 uuid/password 相关字段。
 func EncodeTuicURL(t Tuic) string {
 	u := url.URL{
 		Scheme:   "tuic",
@@ -210,4 +236,34 @@ func ConvertProxyToTuic(proxy Proxy) Tuic {
 	}
 
 	return tuic
+}
+
+// buildTuicProxy 将 TUIC 链接转换为 Clash Proxy，并合并输出阶段的证书校验与前置代理配置。
+func buildTuicProxy(link Urls, config OutputConfig) (Proxy, error) {
+	tuic, err := DecodeTuicURL(link.Url)
+	if err != nil {
+		return Proxy{}, err
+	}
+	if tuic.Name == "" {
+		tuic.Name = fmt.Sprintf("%s:%s", tuic.Host, utils.GetPortString(tuic.Port))
+	}
+	disableSNI := tuic.Disable_sni == 1
+	skipCert := config.Cert || tuic.Insecure == 1
+	return Proxy{Name: tuic.Name, Type: "tuic", Server: tuic.Host, Port: FlexPort(utils.GetPortInt(tuic.Port)), Password: tuic.Password, Uuid: tuic.Uuid, Congestion_controller: tuic.Congestion_control, Alpn: tuic.Alpn, Udp_relay_mode: tuic.Udp_relay_mode, Disable_sni: disableSNI, Sni: tuic.Sni, Tls: tuic.Tls, Client_fingerprint: tuic.ClientFingerprint, Udp: true, Skip_cert_verify: skipCert, Dialer_proxy: link.DialerProxyName, Version: tuic.Version, Token: tuic.Token}, nil
+}
+
+// buildTuicSurgeLine 将 TUIC 链接转换为 Surge 节点行。
+// 该导出会按当前实现选择可映射的凭据字段，属于面向目标客户端的定向导出而非完整保真。
+func buildTuicSurgeLine(link string, config OutputConfig) (string, string, error) {
+	tuic, err := DecodeTuicURL(link)
+	if err != nil {
+		return "", "", err
+	}
+	server := replaceSurgeHost(tuic.Host, config)
+	skipCert := config.Cert || tuic.Insecure == 1
+	line := fmt.Sprintf("%s = tuic, %s, %d, token=%s, udp-relay=%t, skip-cert-verify=%t", tuic.Name, server, utils.GetPortInt(tuic.Port), tuic.Token, true, skipCert)
+	if tuic.Version == 5 {
+		line = fmt.Sprintf("%s = tuic, %s, %d, uuid=%s, password=%s, udp-relay=%t, skip-cert-verify=%t", tuic.Name, server, utils.GetPortInt(tuic.Port), tuic.Uuid, tuic.Password, true, skipCert)
+	}
+	return line, tuic.Name, nil
 }

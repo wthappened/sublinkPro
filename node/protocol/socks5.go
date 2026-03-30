@@ -9,6 +9,23 @@ import (
 	"sublink/utils"
 )
 
+func init() {
+	base := newProtocolSpec("socks5", []string{"socks5://"}, "SOCKS5", "#116ea4", "S", Socks5{}, "Name", DecodeSocks5URL, EncodeSocks5URL, func(s Socks5) LinkIdentity {
+		return buildIdentity("socks5", s.Name, s.Server, utils.GetPortString(s.Port))
+	},
+		FieldMeta{Name: "Name", Label: "节点名称", Type: "string", Group: "basic"},
+		FieldMeta{Name: "Server", Label: "服务器地址", Type: "string", Group: "basic"},
+		FieldMeta{Name: "Port", Label: "端口", Type: "int", Group: "basic"},
+		FieldMeta{Name: "Username", Label: "用户名", Type: "string", Group: "auth", Advanced: true},
+		FieldMeta{Name: "Password", Label: "密码", Type: "string", Group: "auth", Secret: true, Advanced: true},
+	)
+	MustRegisterProtocol(newProxyProtocolSpec(base, func(link Urls, _ OutputConfig) (Proxy, error) {
+		return buildSocks5Proxy(link)
+	}, func(proxy Proxy) bool {
+		return proxyTypeMatches(proxy, "socks5")
+	}, ConvertProxyToSocks5, EncodeSocks5URL))
+}
+
 type Socks5 struct {
 	Name     string
 	Server   string
@@ -17,6 +34,7 @@ type Socks5 struct {
 	Password string
 }
 
+// DecodeSocks5URL 解析 socks5:// 链接，并提取认证信息、地址和节点名称。
 func DecodeSocks5URL(s string) (Socks5, error) {
 	if !strings.Contains(s, "socks5://") {
 		return Socks5{}, fmt.Errorf("非socks协议: %s", s)
@@ -84,4 +102,12 @@ func ConvertProxyToSocks5(proxy Proxy) Socks5 {
 		Username: proxy.Username,
 		Password: proxy.Password,
 	}
+}
+
+func buildSocks5Proxy(link Urls) (Proxy, error) {
+	socks5, err := DecodeSocks5URL(link.Url)
+	if err != nil {
+		return Proxy{}, err
+	}
+	return Proxy{Name: socks5.Name, Type: "socks5", Server: socks5.Server, Port: FlexPort(utils.GetPortInt(socks5.Port)), Username: socks5.Username, Password: socks5.Password, Dialer_proxy: link.DialerProxyName}, nil
 }
