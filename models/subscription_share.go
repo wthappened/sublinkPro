@@ -266,8 +266,13 @@ func (s *SubscriptionShare) RecordAccess() {
 		return
 	}
 
+	db := database.DB
+	if db == nil {
+		return
+	}
+
 	now := time.Now()
-	if err := database.DB.Model(&SubscriptionShare{}).
+	if err := db.Model(&SubscriptionShare{}).
 		Where("id = ?", s.ID).
 		Updates(map[string]any{
 			"access_count":   gorm.Expr("access_count + ?", 1),
@@ -278,7 +283,7 @@ func (s *SubscriptionShare) RecordAccess() {
 	}
 
 	var updated SubscriptionShare
-	if err := database.DB.First(&updated, s.ID).Error; err != nil {
+	if err := db.First(&updated, s.ID).Error; err != nil {
 		utils.Warn("刷新订阅分享访问缓存失败: %v", err)
 		return
 	}
@@ -294,6 +299,11 @@ func (s *SubscriptionShare) RecordAccessAsync() {
 
 	shareID := s.ID
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				utils.Warn("异步记录订阅分享访问发生 panic，已恢复: %v", r)
+			}
+		}()
 		share := SubscriptionShare{ID: shareID}
 		share.RecordAccess()
 	}()
