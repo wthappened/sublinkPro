@@ -493,6 +493,11 @@ func (s *SubscriptionShare) RecordAccessAsync() {
 	accessRecordWG.Add(1)
 	go func() {
 		defer accessRecordWG.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				utils.Warn("异步记录订阅分享访问发生 panic，已恢复: %v", r)
+			}
+		}()
 		share := SubscriptionShare{ID: shareID}
 		share.RecordAccess()
 	}()
