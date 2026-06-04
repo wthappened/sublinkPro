@@ -22,7 +22,6 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 
 import MainCard from 'ui-component/cards/MainCard';
 import { formatDateTime } from 'i18n/locales';
-import { donationConfig, affiliateRecommendationConfig } from 'config/donation';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
 import { getReadableTextTokens, getSurfaceTokens } from 'themes/surfaceTokens';
 import { withAlpha } from 'utils/colorUtils';
@@ -185,40 +184,6 @@ export const StarReminderCard = () => {
             }}
           >
             <Box
-              sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}
-            >
-              {donationConfig.links.map((item, index) => (
-                <Chip
-                  key={item.id || index}
-                  icon={item.icon}
-                  label={t(`donation.links.${item.id}`, item.title)}
-                  component="a"
-                  href={item.url}
-                  target="_blank"
-                  clickable
-                  sx={{
-                    fontWeight: 600,
-                    px: 0.5,
-                    height: 36,
-                    borderRadius: 2,
-                    bgcolor: isDark ? alpha(theme.palette[item.color].main, 0.15) : alpha(theme.palette[item.color].light, 0.5),
-                    color: isDark ? theme.palette[item.color].light : theme.palette[item.color].dark,
-                    border: `1px solid ${isDark ? alpha(theme.palette[item.color].main, 0.3) : alpha(theme.palette[item.color].main, 0.2)}`,
-                    transition: 'background-color 0.2s ease, border-color 0.2s ease',
-                    '&:hover': {
-                      bgcolor: isDark ? alpha(theme.palette[item.color].main, 0.22) : alpha(theme.palette[item.color].light, 0.7)
-                    },
-                    '& .MuiChip-icon': {
-                      color: 'inherit',
-                      fontSize: 18,
-                      ml: 1
-                    }
-                  }}
-                />
-              ))}
-            </Box>
-
-            <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -270,153 +235,6 @@ export const StarReminderCard = () => {
             </Box>
           </Box>
         </Box>
-
-        {affiliateRecommendationConfig && affiliateRecommendationConfig.items.length > 0 && (
-          <Box sx={{ mt: 2.5, pt: 2, borderTop: `1px dashed ${alpha(supportAccentBorder, 0.5)}` }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: 600, color: supportAccentReadable, display: 'flex', alignItems: 'center', gap: 0.5 }}
-              >
-                {t(affiliateRecommendationConfig.titleKey || 'affiliate.title')}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'text.secondary',
-                  display: { xs: 'none', sm: 'block' },
-                  flex: 1,
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {t(affiliateRecommendationConfig.disclaimerKey || 'affiliate.disclaimer')}
-              </Typography>
-            </Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: { xs: 'block', sm: 'none' }, mb: 1.5 }}>
-              {t(affiliateRecommendationConfig.disclaimerKey || 'affiliate.disclaimer')}
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fit, minmax(280px, 1fr))' }, gap: 1.5 }}>
-              {affiliateRecommendationConfig.items.map((item, index) => (
-                <Box
-                  key={item.id || index}
-                  component="a"
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 1.5,
-                    p: 1.5,
-                    borderRadius: 2,
-                    textDecoration: 'none',
-                    bgcolor: isDark
-                      ? alpha(theme.palette[item.color || 'primary'].main, 0.08)
-                      : alpha(theme.palette[item.color || 'primary'].light, 0.3),
-                    border: '1px solid',
-                    borderColor: isDark
-                      ? alpha(theme.palette[item.color || 'primary'].main, 0.2)
-                      : alpha(theme.palette[item.color || 'primary'].main, 0.1),
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: isDark
-                        ? alpha(theme.palette[item.color || 'primary'].main, 0.15)
-                        : alpha(theme.palette[item.color || 'primary'].light, 0.6),
-                      transform: 'translateY(-2px)'
-                    }
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 1.5,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: isDark
-                        ? alpha(theme.palette[item.color || 'primary'].main, 0.2)
-                        : alpha(theme.palette[item.color || 'primary'].main, 0.15),
-                      color: isDark ? theme.palette[item.color || 'primary'].light : theme.palette[item.color || 'primary'].dark,
-                      flexShrink: 0
-                    }}
-                  >
-                    {item.icon}
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ fontWeight: 600, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                      >
-                        {t(`affiliate.items.${item.id}.title`, item.title)}
-                      </Typography>
-                      {item.tag && (
-                        <Chip
-                          label={t(`affiliate.items.${item.id}.tag`, item.tag)}
-                          size="small"
-                          sx={{
-                            height: 18,
-                            fontSize: '0.65rem',
-                            bgcolor: isDark
-                              ? alpha(theme.palette[item.color || 'primary'].main, 0.2)
-                              : alpha(theme.palette[item.color || 'primary'].light, 0.8),
-                            color: isDark ? theme.palette[item.color || 'primary'].light : theme.palette[item.color || 'primary'].dark,
-                            borderRadius: 1
-                          }}
-                        />
-                      )}
-                    </Box>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: 'text.secondary',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      {t(`affiliate.items.${item.id}.description`, item.description)}
-                    </Typography>
-                    {item.highlights?.length > 0 && (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                        {item.highlights.map((highlight, hIndex) => (
-                          <Chip
-                            key={hIndex}
-                            label={t(`affiliate.items.${item.id}.highlights.${hIndex}`, highlight)}
-                            size="small"
-                            sx={{
-                              height: 20,
-                              fontSize: '0.65rem',
-                              bgcolor: 'transparent',
-                              color: 'text.secondary',
-                              border: '1px solid',
-                              borderColor: isDark
-                                ? alpha(theme.palette[item.color || 'primary'].main, 0.24)
-                                : alpha(theme.palette[item.color || 'primary'].main, 0.18)
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    )}
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: isDark ? theme.palette[item.color || 'primary'].light : theme.palette[item.color || 'primary'].dark,
-                        fontWeight: 600
-                      }}
-                    >
-                      {t(`affiliate.items.${item.id}.ctaLabel`, item.ctaLabel)} →
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        )}
       </CardContent>
     </Card>
   );

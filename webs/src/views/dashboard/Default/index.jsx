@@ -140,7 +140,6 @@ const getReadableStatPercentColor = (theme, isDark) => {
 const getReadableWarningAccentColor = (theme, isDark) =>
   isDark ? withAlpha(theme.palette.warning.light, 0.94) : theme.palette.warning.dark;
 
-
 const getInsetPanelSurface = (theme, accentColor, isDark) => {
   const { palette, mutedPanelSurface } = getSurfaceTokens(theme, isDark);
   const darkPanelBase = mutedPanelSurface;
@@ -1562,7 +1561,6 @@ export default function DashboardDefault() {
 
   return (
     <Box sx={{ pb: 3 }}>
-
       {/* 任务进度面板 */}
       <TaskProgressPanel />
 
